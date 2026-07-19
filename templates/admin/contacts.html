@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Pesan Masuk</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="admin-container">
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">Portfolio Admin</div>
+            <nav class="sidebar-nav">
+                <a href="/admin">Dashboard</a>
+                <a href="/admin/profile">Profil</a>
+                <a href="/admin/skills">Keahlian</a>
+                <a href="/admin/experiences">Pengalaman</a>
+                <a href="/admin/projects">Proyek</a>
+                <a href="/admin/contacts" class="active">Pesan</a>
+                <a href="/">Lihat Website</a>
+            </nav>
+        </aside>
+        
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>Pesan Masuk</h1>
+                <div class="admin-actions">
+                    <button onclick="window.location.href='/'">Lihat Portfolio</button>
+                </div>
+            </header>
+            
+            <div class="admin-card">
+                <div class="filter-bar">
+                    <button class="filter-btn active" onclick="filterMessages('all')">Semua</button>
+                    <button class="filter-btn" onclick="filterMessages('unread')">Belum Dibaca</button>
+                    <button class="filter-btn" onclick="filterMessages('read')">Sudah Dibaca</button>
+                </div>
+                
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nama</th>
+                            <th>Email</th>
+                            <th>Subjek</th>
+                            <th>Pesan</th>
+                            <th>Tanggal</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contactsTableBody">
+                        {% for contact in contacts %}
+                        <tr class="{% if not contact.is_read %}unread{% endif %}">
+                            <td>{{ loop.index }}</td>
+                            <td><strong>{{ contact.name }}</strong></td>
+                            <td><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></td>
+                            <td>{{ contact.subject or '-' }}</td>
+                            <td>
+                                <div class="message-preview">{{ contact.message[:50] }}{% if contact.message|length > 50 %}...{% endif %}</div>
+                            </td>
+                            <td>{{ contact.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>
+                                {% if contact.is_read %}
+                                <span class="badge badge-success">Dibaca</span>
+                                {% else %}
+                                <span class="badge badge-warning">Belum Dibaca</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn-view" onclick="viewMessage({{ contact.id }})">Lihat</button>
+                                <button class="btn-delete" onclick="deleteContact({{ contact.id }})">Hapus</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal Lihat Pesan -->
+    <div id="messageModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Detail Pesan</h2>
+                <span class="modal-close" onclick="closeMessageModal()">&times;</span>
+            </div>
+            <div id="messageDetail" class="message-detail">
+                <div class="message-field">
+                    <label>Nama:</label>
+                    <span id="msgName"></span>
+                </div>
+                <div class="message-field">
+                    <label>Email:</label>
+                    <span id="msgEmail"></span>
+                </div>
+                <div class="message-field">
+                    <label>Subjek:</label>
+                    <span id="msgSubject"></span>
+                </div>
+                <div class="message-field">
+                    <label>Tanggal:</label>
+                    <span id="msgDate"></span>
+                </div>
+                <div class="message-field">
+                    <label>Pesan:</label>
+                    <p id="msgMessage"></p>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button onclick="markAsRead()" class="btn-primary">Tandai Sudah Dibaca</button>
+                <button onclick="closeMessageModal()" class="btn-secondary">Tutup</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentContactId = null;
+        
+        function viewMessage(id) {
+            currentContactId = id;
+            fetch(`/api/contacts/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('msgName').textContent = data.name;
+                    document.getElementById('msgEmail').textContent = data.email;
+                    document.getElementById('msgSubject').textContent = data.subject || '-';
+                    document.getElementById('msgDate').textContent = new Date(data.created_at).toLocaleString('id-ID');
+                    document.getElementById('msgMessage').textContent = data.message;
+                    document.getElementById('messageModal').style.display = 'block';
+                    
+                    // Mark as read automatically
+                    markAsRead();
+                });
+        }
+        
+        function markAsRead() {
+            if (!currentContactId) return;
+            
+            fetch(`/api/contacts/${currentContactId}/read`, {
+                method: 'PUT'
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Update UI
+                    const row = document.querySelector(`tr[data-contact-id="${currentContactId}"]`);
+                    if (row) {
+                        row.classList.remove('unread');
+                        row.querySelector('.badge').textContent = 'Dibaca';
+                        row.querySelector('.badge').className = 'badge badge-success';
+                    }
+                }
+            });
+        }
+        
+        function closeMessageModal() {
+            document.getElementById('messageModal').style.display = 'none';
+            currentContactId = null;
+        }
+        
+        function filterMessages(filter) {
+            const rows = document.querySelectorAll('#contactsTableBody tr');
+            const buttons = document.querySelectorAll('.filter-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            rows.forEach(row => {
+                const isRead = row.querySelector('.badge').textContent === 'Dibaca';
+                
+                if (filter === 'all') {
+                    row.style.display = '';
+                } else if (filter === 'unread') {
+                    row.style.display = isRead ? 'none' : '';
+                } else if (filter === 'read') {
+                    row.style.display = isRead ? '' : 'none';
+                }
+            });
+        }
+        
+        async function deleteContact(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus pesan ini?')) return;
+            
+            try {
+                const response = await fetch(`/api/contacts/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Pesan berhasil dihapus!');
+                    window.location.reload();
+                } else {
+                    alert('Gagal menghapus pesan');
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan');
+                console.error(error);
+            }
+        }
+        
+        window.onclick = function(event) {
+            const modal = document.getElementById('messageModal');
+            if (event.target == modal) {
+                closeMessageModal();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# TiDB Configuration
+TIDB_HOST=gateway01.ap-southeast-1.prod.aws.tidbcloud.com
+TIDB_PORT=4000
+TIDB_USER=uhzU6cHGME5yyj9.root
+TIDB_PASSWORD=lu4yDeGSwg9BHGgG
+TIDB_DATABASE=portfolio_db
+
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=y9ddoh0c
+CLOUDINARY_API_KEY=986544547863896
+CLOUDINARY_API_SECRET=4gXSGPM-_h4NEyV6KWpYqaFf7rw
+
+# Resend Configuration
+RESEND_API_KEY=your-resend-api-key
+RESEND_FROM_EMAIL=onboarding@resend.dev
+
+# Flask Configuration
+SECRET_KEY=your-secret-key
+DEBUG=True
+
+# Admin Credentials (ubah sesuai keinginan)
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin123

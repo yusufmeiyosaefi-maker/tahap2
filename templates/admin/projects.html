@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Kelola Proyek</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="admin-container">
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">Portfolio Admin</div>
+            <nav class="sidebar-nav">
+                <a href="/admin">Dashboard</a>
+                <a href="/admin/profile">Profil</a>
+                <a href="/admin/skills">Keahlian</a>
+                <a href="/admin/experiences">Pengalaman</a>
+                <a href="/admin/projects" class="active">Proyek</a>
+                <a href="/admin/contacts">Pesan</a>
+                <a href="/">Lihat Website</a>
+            </nav>
+        </aside>
+        
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>Kelola Proyek</h1>
+                <div class="admin-actions">
+                    <button onclick="openAddModal()">Tambah Proyek</button>
+                    <button onclick="window.location.href='/'">Lihat Portfolio</button>
+                </div>
+            </header>
+            
+            <div class="admin-card">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Gambar</th>
+                            <th>Judul</th>
+                            <th>Kategori</th>
+                            <th>Teknologi</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                {% if project.image_url %}
+                                <img src="{{ project.image_url }}" alt="{{ project.title }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px;">
+                                {% else %}
+                                <span class="no-image">-</span>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ project.title }}</strong></td>
+                            <td>{{ project.category or '-' }}</td>
+                            <td>
+                                {% if project.technologies %}
+                                <div class="tech-tags">
+                                    {% for tech in project.technologies.split(',') %}
+                                    <span class="tech-tag">{{ tech.strip() }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn-edit" onclick="editProject({{ project.id }})">Edit</button>
+                                <button class="btn-delete" onclick="deleteProject({{ project.id }})">Hapus</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal Tambah/Edit Proyek -->
+    <div id="projectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Tambah Proyek</h2>
+                <span class="modal-close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="projectForm" class="admin-form" enctype="multipart/form-data">
+                <input type="hidden" id="projectId" value="">
+                <div class="form-group">
+                    <label for="projectTitle">Judul Proyek</label>
+                    <input type="text" id="projectTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="projectDescription">Deskripsi</label>
+                    <textarea id="projectDescription" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="projectCategory">Kategori</label>
+                    <input type="text" id="projectCategory" placeholder="Contoh: Web Design, Mobile App, dll">
+                </div>
+                <div class="form-group">
+                    <label for="projectImage">Gambar Proyek</label>
+                    <div id="currentImagePreview"></div>
+                    <input type="file" id="projectImage" accept="image/*">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="projectUrl">URL Proyek</label>
+                        <input type="url" id="projectUrl" placeholder="https://example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="projectGithub">GitHub URL</label>
+                        <input type="url" id="projectGithub" placeholder="https://github.com/username/project">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="projectTechnologies">Teknologi (pisahkan dengan koma)</label>
+                    <input type="text" id="projectTechnologies" placeholder="React, Node.js, MongoDB">
+                </div>
+                <div class="form-group">
+                    <label for="projectOrder">Urutan</label>
+                    <input type="number" id="projectOrder" min="0" value="0">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Simpan</button>
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Tambah Proyek';
+            document.getElementById('projectId').value = '';
+            document.getElementById('projectForm').reset();
+            document.getElementById('currentImagePreview').innerHTML = '';
+            document.getElementById('projectModal').style.display = 'block';
+        }
+        
+        function editProject(id) {
+            fetch(`/api/projects/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('modalTitle').textContent = 'Edit Proyek';
+                    document.getElementById('projectId').value = id;
+                    document.getElementById('projectTitle').value = data.title;
+                    document.getElementById('projectDescription').value = data.description || '';
+                    document.getElementById('projectCategory').value = data.category || '';
+                    document.getElementById('projectUrl').value = data.project_url || '';
+                    document.getElementById('projectGithub').value = data.github_url || '';
+                    document.getElementById('projectTechnologies').value = data.technologies || '';
+                    document.getElementById('projectOrder').value = data.order || 0;
+                    
+                    if (data.image_url) {
+                        document.getElementById('currentImagePreview').innerHTML = `
+                            <p>Gambar saat ini:</p>
+                            <img src="${data.image_url}" style="max-width: 200px; border-radius: 6px; margin-bottom: 10px;">
+                        `;
+                    }
+                    
+                    document.getElementById('projectModal').style.display = 'block';
+                });
+        }
+        
+        function closeModal() {
+            document.getElementById('projectModal').style.display = 'none';
+        }
+        
+        document.getElementById('projectForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('projectId').value;
+            const formData = new FormData(this);
+            
+            const url = id ? `/api/projects/${id}` : '/api/projects';
+            const method = id ? 'PUT' : 'POST';
+            
+            // Remove id from formData for PUT
+            if (id) {
+                formData.delete('projectId');
+            }
+            
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(id ? 'Proyek berhasil diupdate!' : 'Proyek berhasil ditambahkan!');
+                    window.location.reload();
+                } else {
+                    alert('Gagal menyimpan proyek: ' + result.message);
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan');
+                console.error(error);
+            }
+        });
+        
+        async function deleteProject(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus proyek ini?')) return;
+            
+            try {
+                const response = await fetch(`/api/projects/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Proyek berhasil dihapus!');
+                    window.location.reload();
+                } else {
+                    alert('Gagal menghapus proyek');
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan');
+                console.error(error);
+            }
+        }
+        
+        window.onclick = function(event) {
+            const modal = document.getElementById('projectModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

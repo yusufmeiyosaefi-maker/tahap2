@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Kelola Keahlian</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="admin-container">
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">Portfolio Admin</div>
+            <nav class="sidebar-nav">
+                <a href="/admin">Dashboard</a>
+                <a href="/admin/profile">Profil</a>
+                <a href="/admin/skills" class="active">Keahlian</a>
+                <a href="/admin/experiences">Pengalaman</a>
+                <a href="/admin/projects">Proyek</a>
+                <a href="/admin/contacts">Pesan</a>
+                <a href="/">Lihat Website</a>
+            </nav>
+        </aside>
+        
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>Kelola Keahlian</h1>
+                <div class="admin-actions">
+                    <button onclick="openAddModal()">Tambah Keahlian</button>
+                    <button onclick="window.location.href='/'">Lihat Portfolio</button>
+                </div>
+            </header>
+            
+            <div class="admin-card">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nama</th>
+                            <th>Kategori</th>
+                            <th>Proficiency</th>
+                            <th>Urutan</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for skill in skills %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ skill.name }}</td>
+                            <td>{{ skill.category or '-' }}</td>
+                            <td>
+                                <div class="skill-bar-mini">
+                                    <div class="skill-bar-fill" style="width: {{ skill.proficiency }}%"></div>
+                                    <span>{{ skill.proficiency }}%</span>
+                                </div>
+                            </td>
+                            <td>{{ skill.order }}</td>
+                            <td>
+                                <button class="btn-edit" onclick="editSkill({{ skill.id }})">Edit</button>
+                                <button class="btn-delete" onclick="deleteSkill({{ skill.id }})">Hapus</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal Tambah/Edit Skill -->
+    <div id="skillModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Tambah Keahlian</h2>
+                <span class="modal-close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="skillForm" class="admin-form">
+                <input type="hidden" id="skillId" value="">
+                <div class="form-group">
+                    <label for="skillName">Nama Keahlian</label>
+                    <input type="text" id="skillName" required>
+                </div>
+                <div class="form-group">
+                    <label for="skillCategory">Kategori</label>
+                    <input type="text" id="skillCategory" placeholder="Contoh: Programming, Design, dll">
+                </div>
+                <div class="form-group">
+                    <label for="skillProficiency">Proficiency (%)</label>
+                    <input type="number" id="skillProficiency" min="0" max="100" value="50" required>
+                </div>
+                <div class="form-group">
+                    <label for="skillOrder">Urutan</label>
+                    <input type="number" id="skillOrder" min="0" value="0">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Simpan</button>
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let editingId = null;
+        
+        function openAddModal() {
+            editingId = null;
+            document.getElementById('modalTitle').textContent = 'Tambah Keahlian';
+            document.getElementById('skillForm').reset();
+            document.getElementById('skillId').value = '';
+            document.getElementById('skillModal').style.display = 'block';
+        }
+        
+        function editSkill(id) {
+            editingId = id;
+            // Fetch skill data
+            fetch(`/api/skills/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('modalTitle').textContent = 'Edit Keahlian';
+                    document.getElementById('skillId').value = id;
+                    document.getElementById('skillName').value = data.name;
+                    document.getElementById('skillCategory').value = data.category || '';
+                    document.getElementById('skillProficiency').value = data.proficiency || 50;
+                    document.getElementById('skillOrder').value = data.order || 0;
+                    document.getElementById('skillModal').style.display = 'block';
+                });
+        }
+        
+        function closeModal() {
+            document.getElementById('skillModal').style.display = 'none';
+        }
+        
+        document.getElementById('skillForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('skillId').value;
+            const data = {
+                name: document.getElementById('skillName').value,
+                category: document.getElementById('skillCategory').value,
+                proficiency: parseInt(document.getElementById('skillProficiency').value),
+                order: parseInt(document.getElementById('skillOrder').value) || 0
+            };
+            
+            const url = id ? `/api/skills/${id}` : '/api/skills';
+            const method = id ? 'PUT' : 'POST';
+            
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(id ? 'Keahlian berhasil diupdate!' : 'Keahlian berhasil ditambahkan!');
+                    window.location.reload();
+                } else {
+                    alert('Gagal menyimpan keahlian');
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan');
+                console.error(error);
+            }
+        });
+        
+        async function deleteSkill(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus keahlian ini?')) return;
+            
+            try {
+                const response = await fetch(`/api/skills/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Keahlian berhasil dihapus!');
+                    window.location.reload();
+                } else {
+                    alert('Gagal menghapus keahlian');
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan');
+                console.error(error);
+            }
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('skillModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

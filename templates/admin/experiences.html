@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Kelola Pengalaman</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="admin-container">
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">Portfolio Admin</div>
+            <nav class="sidebar-nav">
+                <a href="/admin">Dashboard</a>
+                <a href="/admin/profile">Profil</a>
+                <a href="/admin/skills">Keahlian</a>
+                <a href="/admin/experiences" class="active">Pengalaman</a>
+                <a href="/admin/projects">Proyek</a>
+                <a href="/admin/contacts">Pesan</a>
+                <a href="/">Lihat Website</a>
+            </nav>
+        </aside>
+        
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>Kelola Pengalaman</h1>
+                <div class="admin-actions">
+                    <button onclick="openAddModal()">Tambah Pengalaman</button>
+                    <button onclick="window.location.href='/'">Lihat Portfolio</button>
+                </div>
+            </header>
+            
+            <div class="admin-card">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Perusahaan</th>
+                            <th>Posisi</th>
+                            <th>Lokasi</th>
+                            <th>Periode</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exp in experiences %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td><strong>{{ exp.company }}</strong></td>
+                            <td>{{ exp.position }}</td>
+                            <td>{{ exp.location or '-' }}</td>
+                            <td>
+                                {{ exp.start_date.strftime('%b %Y') if exp.start_date else '-' }} - 
+                                {% if exp.is_current %}Sekarang{% else %}{{ exp.end_date.strftime('%b %Y') if exp.end_date else '-' }}{% endif %}
+                            </td>
+                            <td>
+                                {% if exp.is_current %}
+                                <span class="badge badge-success">Aktif</span>
+                                {% else %}
+                                <span class="badge badge-secondary">Selesai</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn-edit" onclick="editExperience({{ exp.id }})">Edit</button>
+                                <button class="btn-delete" onclick="deleteExperience({{ exp.id }})">Hapus</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal Tambah/Edit Pengalaman -->
+    <div id="experienceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Tambah Pengalaman</h2>
+                <span class="modal-close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="experienceForm" class="admin-form">
+                <input type="hidden" id="expId" value="">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="expCompany">Perusahaan</label>
+                        <input type="text" id="expCompany" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expPosition">Posisi</label>
+                        <input type="text" id="expPosition" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="expLocation">Lokasi</label>
+                    <input type="text" id="expLocation">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="expStartDate">Tanggal Mulai</label>
+                        <input type="date" id="expStartDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expEndDate">Tanggal Selesai</label>
+                        <input type="date" id="expEndDate">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="expIsCurrent"> Masih Bekerja di Sini
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label for="expDescription">Deskripsi</label>
+                    <textarea id="expDescription" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="expOrder">Urutan</label>
+                    <input type="number" id="expOrder" min="0" value="0">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Simpan</button>
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Tambah Pengalaman';
+            document.getElementById('expId').value = '';
+            document.getElementById('experienceForm').reset();
+            document.getElementById('expIsCurrent').checked = false;
+            document.getElementById('expEndDate').disabled = false;
+            document.getElementById('experienceModal').style.display = 'block';
+        }
+        
+        function editExperience(id) {
+            fetch(`/api/experiences/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('modalTitle').textContent = 'Edit Pengalaman';
+                    document.getElementById('expId').value = id;
+                    document.getElementById('expCompany').value = data.company;
+                    document.getElementById('expPosition').value = data.position;
+                    document.getElementById('expLocation').value = data.location || '';
+                    document.getElementById('expStartDate').value = data.start_date;
+                    document.getElementById('expEndDate').value = data.end_date || '';
+                    document.getElementById('expIsCurrent').checked = data.is_current || false;
+                    document.getElementById('expDescription').value = data.description || '';
+                    document.getElementById('expOrder').value = data.order || 0;
+                    document.getElementById('expEndDate').disabled = data.is_current || false;
+                    document.getElementById('experienceModal').style.display = 'block';
+                });
+        }
+        
+        function closeModal() {
+            document.getElementById('experienceModal').style.display = 'none';
+        }
+        
+        document.getElementById('expIsCurrent').addEventListener('change', function() {
+            document.getElementById('expEndDate').disabled = this.checked;
+            if (this.checked) {
+                document.getElementById('expEndDate').value = '';
+            }
+        });
+        
+        document.getElementById('experienceForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('expId').value;
+            const data = {
+                company: document.getElementById('expCompany').value,
+                position: document.getElementById('expPosition').value,
+                location: document.getElementById('expLocation').value,
+                start_date: document.getElementById('expStartDate').value,
+                end_date: document.getElementById('expEndDate').value,
+                is_current: document.getElementById('expIsCurrent').checked,
+                description: document.getElementById('expDescription').value,
+                order: parseInt(document.getElementById('expOrder').value) || 0
+            };
+            
+            const url = id ? `/api/experiences/${id}` : '/api/experiences';
+            const method = id ? 'PUT' : 'POST';
+            
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(id ? 'Pengalaman berhasil diupdate!' : 'Pengalaman berhasil ditambahkan!');
+                    window.location.reload();
+                } else {
+                    alert('Gagal menyimpan pengalaman');
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan');
+                console.error(error);
+            }
+        });
+        
+        async function deleteExperience(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus pengalaman ini?')) return;
+            
+            try {
+                const response = await fetch(`/api/experiences/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Pengalaman berhasil dihapus!');
+                    window.location.reload();
+                } else {
+                    alert('Gagal menghapus pengalaman');
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan');
+                console.error(error);
+            }
+        }
+        
+        window.onclick = function(event) {
+            const modal = document.getElementById('experienceModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

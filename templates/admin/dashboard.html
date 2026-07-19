@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="admin-container">
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">Portfolio Admin</div>
+            <nav class="sidebar-nav">
+                <a href="/admin" class="active">Dashboard</a>
+                <a href="/admin/profile">Profil</a>
+                <a href="/admin/skills">Keahlian</a>
+                <a href="/admin/experiences">Pengalaman</a>
+                <a href="/admin/projects">Proyek</a>
+                <a href="/admin/contacts">Pesan</a>
+                <a href="/">Lihat Website</a>
+            </nav>
+        </aside>
+        
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>Dashboard</h1>
+                <div class="admin-actions">
+                    <button onclick="window.location.href='/'">Lihat Portfolio</button>
+                </div>
+            </header>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Proyek</h3>
+                    <p class="stat-number">{{ project_count or 0 }}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Keahlian</h3>
+                    <p class="stat-number">{{ skill_count or 0 }}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Pengalaman</h3>
+                    <p class="stat-number">{{ experience_count or 0 }}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Pesan Masuk</h3>
+                    <p class="stat-number">{{ contact_count or 0 }}</p>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

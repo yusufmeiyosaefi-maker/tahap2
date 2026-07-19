@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Kelola Profil</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="admin-container">
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">Portfolio Admin</div>
+            <nav class="sidebar-nav">
+                <a href="/admin">Dashboard</a>
+                <a href="/admin/profile" class="active">Profil</a>
+                <a href="/admin/skills">Keahlian</a>
+                <a href="/admin/experiences">Pengalaman</a>
+                <a href="/admin/projects">Proyek</a>
+                <a href="/admin/contacts">Pesan</a>
+                <a href="/">Lihat Website</a>
+            </nav>
+        </aside>
+        
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>Kelola Profil</h1>
+                <div class="admin-actions">
+                    <button onclick="window.location.href='/'">Lihat Portfolio</button>
+                </div>
+            </header>
+            
+            <div class="admin-card">
+                <form id="profile-form" class="admin-form" enctype="multipart/form-data">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">Nama Lengkap</label>
+                            <input type="text" id="name" name="name" value="{{ profile.name if profile else '' }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="title">Jabatan</label>
+                            <input type="text" id="title" name="title" value="{{ profile.title if profile else '' }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bio">Bio</label>
+                        <textarea id="bio" name="bio" rows="4">{{ profile.bio if profile else '' }}</textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" value="{{ profile.email if profile else '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Telepon</label>
+                            <input type="text" id="phone" name="phone" value="{{ profile.phone if profile else '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="location">Lokasi</label>
+                        <input type="text" id="location" name="location" value="{{ profile.location if profile else '' }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="profile_image">Foto Profil</label>
+                        {% if profile and profile.profile_image %}
+                        <div class="current-image">
+                            <img src="{{ profile.profile_image }}" alt="Profile Image" style="max-width: 150px; border-radius: 8px;">
+                            <p>Foto saat ini</p>
+                        </div>
+                        {% endif %}
+                        <input type="file" id="profile_image" name="profile_image" accept="image/*">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="github_url">GitHub URL</label>
+                            <input type="url" id="github_url" name="github_url" value="{{ profile.github_url if profile else '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="linkedin_url">LinkedIn URL</label>
+                            <input type="url" id="linkedin_url" name="linkedin_url" value="{{ profile.linkedin_url if profile else '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="instagram_url">Instagram URL</label>
+                        <input type="url" id="instagram_url" name="instagram_url" value="{{ profile.instagram_url if profile else '' }}">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Simpan Profil</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        document.getElementById('profile-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            
+            submitBtn.textContent = 'Menyimpan...';
+            submitBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/admin/profile', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Profil berhasil disimpan!');
+                    window.location.reload();
+                } else {
+                    alert('Gagal menyimpan profil: ' + result.message);
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan. Silakan coba lagi.');
+                console.error('Error:', error);
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

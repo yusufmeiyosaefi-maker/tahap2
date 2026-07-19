@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile.name }} - Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600&family=Geist:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navigation -->
+<nav class="navbar" id="mainNavbar">
+    <div class="nav-container">
+        <div class="nav-brand">
+            {% if profile and profile.name %}
+                {{ profile.name.split()[0] }}.
+            {% else %}
+                Portfolio
+            {% endif %}
+        </div>
+        <div class="nav-links">
+            <a href="#about">Tentang</a>
+            <a href="#skills">Keahlian</a>
+            <a href="#experience">Pengalaman</a>
+            <a href="#projects">Proyek</a>
+            <a href="#contact">Hubungi Saya</a>
+            <a href="{{ url_for('login') }}">Login</a>
+        </div>
+        <div class="hamburger" onclick="toggleMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+</nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-background">
+            <div class="hero-overlay"></div>
+            <svg class="hero-wave" viewBox="0 0 1440 800" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0,400 C360,200 720,600 1080,300 C1260,200 1380,350 1440,400 L1440,800 L0,800 Z" fill="#d4820a" opacity="0.3"/>
+                <path d="M0,450 C400,250 800,650 1200,350 C1320,280 1400,380 1440,420 L1440,800 L0,800 Z" fill="#d4820a" opacity="0.2"/>
+            </svg>
+        </div>
+        <div class="hero-content">
+            <div class="hero-eyebrow">GRAPHIC DESIGNER & CREATIVE PROFESSIONAL</div>
+            <h1 class="hero-heading">{{ profile.name }}</h1>
+            <p class="hero-subheading">{{ profile.title }}</p>
+            <div class="hero-actions">
+                <a href="#projects" class="btn-primary">Jelajahi Karya</a>
+                <a href="#contact" class="btn-secondary">Hubungi Saya</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="section about">
+        <div class="container">
+            <div class="about-grid">
+                <div class="about-image">
+                    <img src="{{ profile.profile_image or url_for('static', filename='images/default-profile.jpg') }}" alt="{{ profile.name }}">
+                </div>
+                <div class="about-content">
+                    <h2 class="section-heading">Tentang Saya</h2>
+                    <p class="about-bio">{{ profile.bio }}</p>
+                    <div class="about-info">
+                        <div><span>Email:</span> {{ profile.email }}</div>
+                        <div><span>Lokasi:</span> {{ profile.location }}</div>
+                        <div><span>Telepon:</span> {{ profile.phone }}</div>
+                    </div>
+                    <div class="social-links">
+                        {% if profile.github_url %}
+                        <a href="{{ profile.github_url }}" target="_blank">GitHub</a>
+                        {% endif %}
+                        {% if profile.linkedin_url %}
+                        <a href="{{ profile.linkedin_url }}" target="_blank">LinkedIn</a>
+                        {% endif %}
+                        {% if profile.instagram_url %}
+                        <a href="{{ profile.instagram_url }}" target="_blank">Instagram</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+<section id="skills" class="section skills">
+    <div class="container">
+        <h2 class="section-heading">Keahlian</h2>
+        <div class="skills-grid">
+            {% for category, skills in skill_categories.items() %}
+            <div class="skill-category">
+                <h3 class="category-title">{{ category }}</h3>
+                <ul class="skill-list">
+                    {% for skill in skills %}
+                    <li class="skill-item-simple">
+                        <span class="skill-dot"></span>
+                        {{ skill.name }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+    <!-- Experience Section -->
+<section id="experience" class="section experience">
+    <div class="container">
+        <h2 class="section-heading">Pengalaman</h2>
+        <div class="experience-grid">
+            {% for exp in experiences %}
+            <div class="experience-card">
+                <div class="experience-card-header">
+                    <h3 class="card-heading">{{ exp.position }}</h3>
+                    <span class="experience-status">
+                        {% if exp.is_current %}
+                        <span class="badge-active">Aktif</span>
+                        {% else %}
+                        <span class="badge-completed">Selesai</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="experience-company">
+                    <span class="company-name">{{ exp.company }}</span>
+                    <span class="company-location">{{ exp.location }}</span>
+                </div>
+                <div class="experience-date">
+                    <span class="date-icon">📅</span>
+                    {% if exp.start_date %}
+                        {{ exp.start_date.strftime('%B %Y') }}
+                    {% endif %}
+                    -
+                    {% if exp.is_current %}
+                        Sekarang
+                    {% else %}
+                        {% if exp.end_date %}
+                            {{ exp.end_date.strftime('%B %Y') }}
+                        {% else %}
+                            Selesai
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <p class="experience-description">{{ exp.description|safe }}</p>
+                {% if exp.description and ('Tools yang digunakan' in exp.description or '•' in exp.description) %}
+                <div class="experience-tools">
+                    <span class="tools-label">🛠️ Tools:</span>
+                    <div class="tools-tags">
+                        {% set tools = exp.description.split('Tools yang digunakan:') %}
+                        {% if tools|length > 1 %}
+                            {% set tool_list = tools[1].split('\n') %}
+                            {% for tool in tool_list %}
+                                {% if '•' in tool %}
+                                    <span class="tool-tag">{{ tool.replace('•', '').strip() }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+    <!-- Projects Section -->
+    <section id="projects" class="section projects">
+        <div class="container">
+            <h2 class="section-heading">Proyek</h2>
+            <div class="projects-grid">
+                {% for project in projects %}
+                <div class="project-card">
+                    <div class="project-image">
+                        <img src="{{ project.image_url }}" alt="{{ project.title }}">
+                        <div class="project-overlay">
+                            <div class="project-links">
+                                {% if project.project_url %}
+                                <a href="{{ project.project_url }}" target="_blank">Live Demo</a>
+                                {% endif %}
+                                {% if project.github_url %}
+                                <a href="{{ project.github_url }}" target="_blank">Source Code</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <h3 class="card-heading">{{ project.title }}</h3>
+                        <p class="project-description">{{ project.description }}</p>
+                        <div class="project-technologies">
+                            {% for tech in project.technologies.split(',') if project.technologies %}
+                            <span class="tech-badge">{{ tech.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="section contact">
+        <div class="container">
+            <h2 class="section-heading">Hubungi Saya</h2>
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <h3 class="sub-heading">Mari Bekerja Sama</h3>
+                    <p>Ada proyek atau pertanyaan? Jangan ragu untuk menghubungi saya.</p>
+                    <div class="contact-details">
+                        <div><strong>Email:</strong> {{ profile.email }}</div>
+                        <div><strong>Telepon:</strong> {{ profile.phone }}</div>
+                        <div><strong>Lokasi:</strong> {{ profile.location }}</div>
+                    </div>
+                </div>
+                <form id="contact-form" class="contact-form">
+                    <div class="form-group">
+                        <input type="text" id="name" name="name" placeholder="Nama Lengkap" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" id="email" name="email" placeholder="Email" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="subject" name="subject" placeholder="Subjek">
+                    </div>
+                    <div class="form-group">
+                        <textarea id="message" name="message" placeholder="Pesan" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">Kirim Pesan</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
